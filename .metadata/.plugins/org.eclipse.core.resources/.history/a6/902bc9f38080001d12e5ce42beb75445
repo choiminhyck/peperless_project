@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.paperless.DashboardDAO">
+	
+	<sql id="approvalStateFrom">
+		<if test="approvalState_reportCode == 1">
+		   daily_report
+		</if>
+		<if test="approvalState_reportCode == 2">
+		   expense_report
+		</if>
+		<if test="approvalState_reportCode == 3">
+		   sales_report
+		</if>
+	</sql>
+	
+	<sql id="typeNoFrom">
+		<if test="typeNo_reportCode == 1">
+		   daily_report
+		</if>
+		<if test="typeNo_reportCode == 2">
+		   expense_report
+		</if>
+		<if test="typeNo_reportCode == 3">
+		   sales_report
+		</if>
+	</sql>
+	
+	<!-- 월별 등록한 보고서 결재 상태별 갯수 -->
+	<select id="getApprovalCnt" parameterType="com.example.paperless.DashboardDTO" resultType="java.util.HashMap">
+	
+		select M.MONTH||'월' as "month"
+			, (select count(*) from approval
+			where approval_no in
+				(select min(approval_no) from approval     
+				where to_char(approval_time, 'YYYY') = '${approvalCnt_year}'     
+				and company_code = ${company_code}     
+				and report_code = 1     
+				group by r_no)
+			and emp_no = ${emp_no}
+			and M.MONTH = to_char(approval.approval_time, 'MM')) as "daily"
+			, (select count(*) from approval
+			where approval_no in
+				(select min(approval_no) from approval     
+				where to_char(approval_time, 'YYYY') = '${approvalCnt_year}'     
+				and company_code = ${company_code}     
+				and report_code = 2     
+				group by r_no)
+			and emp_no = ${emp_no}
+			and M.MONTH = to_char(approval.approval_time, 'MM')) as "expense"
+			, (select count(*) from approval
+			where approval_no in
+				(select min(approval_no) from approval     
+				where to_char(approval_time, 'YYYY') = '${approvalCnt_year}'     
+				and company_code = ${company_code}     
+				and report_code = 3     
+				group by r_no)
+			and emp_no = ${emp_no}
+			and M.MONTH = to_char(approval.approval_time, 'MM')) as "sales"
+		from ( SELECT '01' "MONTH" FROM DUAL
+			UNION SELECT '02' FROM DUAL
+			UNION SELECT '03' FROM DUAL
+			UNION SELECT '04' FROM DUAL
+			UNION SELECT '05' FROM DUAL
+			UNION SELECT '06' FROM DUAL
+			UNION SELECT '07' FROM DUAL
+			UNION SELECT '08' FROM DUAL
+			UNION SELECT '09' FROM DUAL
+			UNION SELECT '10' FROM DUAL
+			UNION SELECT '11' FROM DUAL
+			UNION SELECT '12' FROM DUAL
+			) M
+		
+	</select>
+	
+	<!-- 년도별 등록한 보고서 업무구분별 개수 -->
+	<select id="getApprovalState" parameterType="com.example.paperless.DashboardDTO" resultType="java.util.HashMap">
+	
+		select approval_type.approval_name as "approval_name"
+		    , (select count(*) from <include refid="approvalStateFrom"/>
+		        where company_code = ${company_code}
+		        and emp_no = ${emp_no}
+		        and approval_type.approval_code = <include refid="approvalStateFrom"/>.approval_code
+		        and r_no in (select r_no from approval
+		            where approval_no in
+		                (select min(approval_no) from approval     
+						where to_char(approval_time, 'YYYY-MM') = '${approvalState_year}-${approvalState_month}'     
+						and company_code = ${company_code}     
+						and report_code = ${approvalState_reportCode}     
+						group by r_no)
+					and emp_no = ${emp_no})
+		        ) as "cnt"
+		from approval_type
+			
+	</select>
+	
+	
+	<!-- 년도별 등록한 보고서 업무구분별 개수 -->
+	<select id="getTypeNo" parameterType="com.example.paperless.DashboardDTO" resultType="java.util.HashMap">
+	
+		select report_type_code.type_name as "type_name"    
+			, (select count(*) from <include refid="typeNoFrom"/>     
+			where r_no in      
+				(select r_no from approval      
+				where approval_no in       
+					(select min(approval_no) from approval       
+					where to_char(approval_time, 'YYYY') = '${typeNo_year}'       
+						and company_code = ${company_code}       
+						and report_code = ${typeNo_reportCode}       
+						group by r_no)      
+				and emp_no = ${emp_no})     
+			and company_code = ${company_code}     
+			and report_type_code.type_code = <include refid="typeNoFrom"/>.type_code) as "cnt"   
+		from report_type_code
+		where report_type_code.report_code = ${typeNo_reportCode}
+		
+	</select>
+	
+	<!-- 보고서 결재 요청 목록 -->
+	<select id="">
+	
+		select
+	
+	</select>
+</mapper>
